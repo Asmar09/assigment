@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import './App.css';
+import { FileUploader } from './UploadFile';
 
 const App = () => {
   const [rowData, setRowData] = useState([]);
@@ -10,26 +11,31 @@ const App = () => {
 
   const itemsPerPage = 50;
 
-
   const handleFileUpload = (file) => {
+    console.log(file)
     const reader = new FileReader();
   
     reader.onload = (e) => {
       const data = e.target.result;
+      try{
       const workbook = XLSX.read(data, { type: 'binary' });
-  
-      // Assuming only one sheet in the workbook
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
   
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
-  
-      // Extract column names from the first row
       const columns = Object.keys(jsonData[0]);
-  
+
+      setRowData([]);
+      setColumnData([]);
+
+
       setRowData(jsonData);
       setColumnData(columns);
-    };
+    }
+    catch(error){
+      console.error('Error reading or processing the file:', error.message);
+    }
+  }
   
     reader.readAsBinaryString(file);
   };
@@ -111,7 +117,9 @@ const App = () => {
   
   const renderTable = () => {
     if (rowData.length === 0 || columnData.length === 0) {
-      return null;
+      return (
+        <div style={{margin: "10rem"}}>No File Uploaded yet</div>
+      );
     }
 
     const startIndex = currentPage * itemsPerPage;
@@ -173,7 +181,7 @@ const App = () => {
   return (
     <div className="app">
       <h1>Excel Upload Project</h1>
-      <input type="file" onChange={(e) => handleFileUpload(e.target.files[0])} />
+     <FileUploader handleFile={handleFileUpload} />
       {renderTable()}
     </div>
   );

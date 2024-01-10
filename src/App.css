@@ -91,10 +91,29 @@ tbody tr:hover {
 .chart-cell {
   margin-bottom: 20px;
 }
-
+.chart-cell p{
+   font-size: 14px;
+}
 /* Responsive styles for the chart */
 @media (max-width: 768px) {
   .chart-cell {
     margin-bottom: 30px;
   }
+}
+
+.button-upload {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255);
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit;
+  min-height: 48px;
+  min-width: 80px !important;
+  width: 150px;
+}
+.button-upload:focus {
+  outline-offset: 4px;
 }
