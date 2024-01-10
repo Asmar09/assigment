@@ -2,7 +2,7 @@ import { useRef } from "react";
 import "./App.css";
 
 
-export const FileUploader = ({ handleFile }) => {
+export const FileUploader = ({ handleFile, loading }) => {
   const hiddenFileInput = useRef(null);
 
   const handleClick = (event) => {
@@ -15,7 +15,7 @@ export const FileUploader = ({ handleFile }) => {
   };
   return (
     <>
-      <button className="button-upload" onClick={handleClick}>
+      <button disabled={loading} className="button-upload" onClick={handleClick}>
         Upload a File
       </button>
       <input

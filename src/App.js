@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import PropTypes from 'prop-types';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import ReactLoading from "react-loading"
 import './App.css';
 import { FileUploader } from './UploadFile';
 
@@ -8,11 +10,12 @@ const App = () => {
   const [rowData, setRowData] = useState([]);
   const [columnData, setColumnData] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const itemsPerPage = 50;
 
   const handleFileUpload = (file) => {
-    console.log(file)
+    setLoading(true);
     const reader = new FileReader();
   
     reader.onload = (e) => {
@@ -31,8 +34,10 @@ const App = () => {
 
       setRowData(jsonData);
       setColumnData(columns);
+      setLoading(false);
     }
     catch(error){
+      setLoading(false);
       console.error('Error reading or processing the file:', error.message);
     }
   }
@@ -51,31 +56,36 @@ const App = () => {
       if (uniqueValues.length === totalItems) {
         return (
           <div className="chart-cell">
-              <p>{`unique values`}</p>
-            <p>{totalItems}</p>
+             <div style={{display: "flex", justifyContent: "space-between", marginTop: "-15px"}}><p style={{fontSize:"12", fontWeight: "200"}}>unique values:</p>  <p style={{fontSize:"12", fontWeight: "200"}}>{totalItems}</p></div> 
           </div>
         );
       }
 
-      const chartData = columnData.reduce((acc, value) => {
-        acc[value] = (acc[value] || 0) + 1;
-        return acc;
-      }, {});
+      // const chartData = columnData.reduce((acc, value) => {
+      //   acc[value] = (acc[value] || 0) + 1;
+      //   return acc;
+      // }, {});
   
-      const chartDataArray = Object.keys(chartData).map((key) => ({
-        name: key,
-        value: chartData[key],
+      // const chartDataArray = Object.keys(chartData).map((key) => ({
+      //   name: key,
+      //   value: chartData[key],
+      // }));
+  
+      const bins = calculateHistogramBins(columnData, 10); 
+
+      const chartData = bins.map((bin) => ({
+        bin: `${bin.start.toFixed(2)} - ${bin.end.toFixed(2)}`,
+        count: bin.length,
       }));
   
       return (
         <div className="chart-cell">
-        <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={chartDataArray}>
-            <Bar dataKey="value" fill="#8884d8" barSize={50} />
-              <XAxis dataKey="name" />
-              <YAxis hide />
+          <ResponsiveContainer width="100%" height={100}>
+            <BarChart data={chartData}>
+              <Bar dataKey="count" fill="#8884d8" />
+              <XAxis dataKey="bin" hide={true} />
+              <YAxis hide={true} />
               <Tooltip />
-              <Legend />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -88,8 +98,7 @@ const App = () => {
       if (uniqueValues.length === totalItems) {
         return (
           <div className="chart-cell">
-            <p>{`unique values: ${totalItems}`}</p>
-            <p>{totalItems}</p>
+             <div style={{display: "flex", justifyContent: "space-between", marginTop: "-15px"}}><p style={{fontSize:"12", fontWeight: "200"}}>unique values:</p>  <p style={{fontSize:"12", fontWeight: "200"}}>{totalItems}</p></div> 
           </div>
         );
       } else {
@@ -106,13 +115,39 @@ const App = () => {
         return (
           <div className="chart-cell">
             {firstTwoPercentages.map(({ value, percentage }) => (
-              <p key={value}>{`${value}: ${percentage.toFixed(2)}%`}</p>
+           <div style={{display: "flex", justifyContent: "space-between", marginTop: "-15px"}}><p style={{fontSize:"12", fontWeight: "200"}} key={value}>{value.length > 20 ? `${value.slice(0,20)}: ` : `${value}: `}</p> <p style={{fontSize:"12", fontWeight: "200"}}>{`${percentage.toFixed(2)}%`}</p></div>
             ))}
-            <p>{`Other(${totalItems - firstTwoPercentages.length}): ${remainingPercentage.toFixed(2)}%`}</p>
+          <div style={{display: "flex", justifyContent: "space-between", marginTop: "-15px"}}><p style={{fontSize:"12", fontWeight: "200"}}>Other:</p>  <p style={{fontSize:"12", fontWeight: "200"}}>{`${remainingPercentage.toFixed(2)}%`}</p></div> 
           </div>
         );
       }
     }
+  };
+
+
+  ChartCell.propTypes = {
+    columnName: PropTypes.string.isRequired,
+    columnData: PropTypes.array.isRequired,
+  };
+  
+  // Function to calculate histogram bins
+  const calculateHistogramBins = (data, numBins) => {
+    const minValue = Math.min(...data);
+    const maxValue = Math.max(...data);
+    const binWidth = (maxValue - minValue) / numBins;
+  
+    const bins = Array.from({ length: numBins }, (_, index) => {
+      const start = minValue + index * binWidth;
+      const end = start + binWidth;
+  
+      return {
+        start,
+        end,
+        length: data.filter((value) => value >= start && value < end).length,
+      };
+    });
+  
+    return bins;
   };
   
   const renderTable = () => {
@@ -181,8 +216,12 @@ const App = () => {
   return (
     <div className="app">
       <h1>Excel Upload Project</h1>
-     <FileUploader handleFile={handleFileUpload} />
-      {renderTable()}
+     <FileUploader handleFile={handleFileUpload} loading={loading} />
+     {loading ? (
+        <div className="loader"><ReactLoading type="spinningBubbles" color="#000" /></div>
+      ) : (
+        renderTable()
+      )}
     </div>
   );
 };
